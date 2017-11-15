@@ -1,0 +1,16 @@
+.DS_Store
+.idea/*
+*.iml
+.gradle/*
+build/*
+.phrase
+*.diff
+*.bak
+*.swp
+local.properties
+gradle.properties
+app/coverage-error.log
+files/*
+projectFilesBackup*/*
+captures/
+spoon-output/*
