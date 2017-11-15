@@ -102,14 +102,8 @@ class MainActivity : AppCompatActivity() {
             Log.w(TAG, "Barcode detector dependencies are not yet available.")
         }
 
-//        cameraSource = CameraSource.Builder(this, detector)
-//                .setRequestedPreviewSize(1024, 768)
-//                .setFacing(CameraSource.CAMERA_FACING_BACK)
-//                .setRequestedFps(15.0f)
-//                .build()
-
         cameraSource = CameraSource.Builder(this, detector)
-                .setRequestedPreviewSize(1024, 1024)
+                .setRequestedPreviewSize(1024, 768)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedFps(15.0f)
                 .build()
