@@ -2,7 +2,8 @@ package com.moyinoluwa.camerabarcodedetection.ui.camera
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceHolder
@@ -10,6 +11,8 @@ import android.view.SurfaceView
 import android.view.ViewGroup
 import com.google.android.gms.vision.CameraSource
 import java.io.IOException
+import java.lang.Math.max
+import java.lang.Math.min
 
 private const val TAG = "CameraSourcePreview"
 
@@ -22,6 +25,16 @@ class CameraSourcePreview(private val mContext: Context, attrs: AttributeSet)
     private var cameraSource: CameraSource? = null
     private var overlay: GraphicOverlay? = null
 
+    private val isPortraitMode: Boolean
+        get() {
+            val orientation = mContext.resources.configuration.orientation
+            if (orientation == ORIENTATION_LANDSCAPE) return false
+            if (orientation == ORIENTATION_PORTRAIT) return true
+
+            Log.d(TAG, "isPortraitMode returning false by default")
+            return false
+        }
+
     init {
         startRequested = false
         surfaceAvailable = false
@@ -33,13 +46,11 @@ class CameraSourcePreview(private val mContext: Context, attrs: AttributeSet)
 
     @Throws(IOException::class)
     fun start(cameraSource: CameraSource?) {
-        if (cameraSource == null) {
-            stop()
-        }
+        if (cameraSource == null) stop()
 
         this.cameraSource = cameraSource
 
-        if (this.cameraSource != null) {
+        this.cameraSource?.let {
             startRequested = true
             startIfReady()
         }
@@ -52,14 +63,12 @@ class CameraSourcePreview(private val mContext: Context, attrs: AttributeSet)
     }
 
     fun stop() {
-        if (cameraSource != null) {
-            cameraSource?.stop()
-        }
+        cameraSource?.stop()
     }
 
     fun release() {
-        if (cameraSource != null) {
-            cameraSource?.release()
+        cameraSource?.let {
+            it.release()
             cameraSource = null
         }
     }
@@ -67,54 +76,36 @@ class CameraSourcePreview(private val mContext: Context, attrs: AttributeSet)
     @SuppressLint("MissingPermission")
     @Throws(IOException::class)
     private fun startIfReady() {
-        cameraSource?.let {
+        cameraSource?.let { cameraSource ->
             if (startRequested && surfaceAvailable) {
-                it.start(surfaceView.holder)
+                cameraSource.start(surfaceView.holder)
 
-                if (overlay != null) {
-                    val size = it.previewSize
-                    val min = Math.min(size.width, size.height)
-                    val max = Math.max(size.width, size.height)
+                overlay?.let {
+                    val size = cameraSource.previewSize
+                    val min = min(size.width, size.height)
+                    val max = max(size.width, size.height)
                     if (isPortraitMode) {
                         // Swap width and height sizes when in portrait, since it will be rotated by
                         // 90 degrees
-                        overlay?.setCameraInfo(min, max, it.cameraFacing)
+                        it.setCameraInfo(min, max, cameraSource.cameraFacing)
                     } else {
-                        overlay?.setCameraInfo(max, min, it.cameraFacing)
+                        it.setCameraInfo(max, min, cameraSource.cameraFacing)
                     }
-                    overlay?.clear()
+                    it.clear()
                 }
                 startRequested = false
             }
         }
     }
 
-    private inner class SurfaceCallback : SurfaceHolder.Callback {
-
-        override fun surfaceCreated(surface: SurfaceHolder) {
-            surfaceAvailable = true
-            try {
-                startIfReady()
-            } catch (e: IOException) {
-                Log.e(TAG, "Could not start camera source.", e)
-            }
-        }
-
-        override fun surfaceDestroyed(surface: SurfaceHolder) {
-            surfaceAvailable = false
-        }
-
-        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-    }
-
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         var width = 320
         var height = 240
-        if (cameraSource != null) {
-            val size = cameraSource?.previewSize
-            if (size != null) {
-                width = size.width
-                height = size.height
+
+        cameraSource?.let {
+            it.previewSize?.let {
+                width = it.width
+                height = it.height
             }
         }
 
@@ -150,17 +141,21 @@ class CameraSourcePreview(private val mContext: Context, attrs: AttributeSet)
 
     }
 
-    private val isPortraitMode: Boolean
-        get() {
-            val orientation = mContext.resources.configuration.orientation
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                return false
-            }
-            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                return true
-            }
+    private inner class SurfaceCallback : SurfaceHolder.Callback {
 
-            Log.d(TAG, "isPortraitMode returning false by default")
-            return false
+        override fun surfaceCreated(surface: SurfaceHolder) {
+            surfaceAvailable = true
+            try {
+                startIfReady()
+            } catch (e: IOException) {
+                Log.e(TAG, "Could not start camera source.", e)
+            }
         }
+
+        override fun surfaceDestroyed(surface: SurfaceHolder) {
+            surfaceAvailable = false
+        }
+
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+    }
 }
