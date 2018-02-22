@@ -19,9 +19,9 @@ import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.View
-import com.google.android.gms.vision.CameraSource
+import com.google.android.gms.vision.CameraSource.CAMERA_FACING_BACK
+import com.google.android.gms.vision.CameraSource.CAMERA_FACING_FRONT
 import com.moyinoluwa.camerabarcodedetection.ui.camera.GraphicOverlay.Graphic
-import java.util.*
 
 /**
  * A view which renders a series of custom graphics to be overlayed on top of an associated preview
@@ -51,7 +51,7 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
     private var mWidthScaleFactor = 1.0f
     private var mPreviewHeight: Int = 0
     private var mHeightScaleFactor = 1.0f
-    private var mFacing = CameraSource.CAMERA_FACING_BACK
+    private var mFacing = CAMERA_FACING_BACK
     private val mGraphics = HashSet<Graphic>()
 
     /**
@@ -79,26 +79,22 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
          * Adjusts a horizontal value of the supplied value from the preview scale to the view
          * scale.
          */
-        fun scaleX(horizontal: Float): Float {
-            return horizontal * mOverlay.mWidthScaleFactor
-        }
+        fun scaleX(horizontal: Float) = horizontal * mOverlay.mWidthScaleFactor
 
         /**
          * Adjusts a vertical value of the supplied value from the preview scale to the view scale.
          */
-        fun scaleY(vertical: Float): Float {
-            return vertical * mOverlay.mHeightScaleFactor
-        }
+        fun scaleY(vertical: Float) = vertical * mOverlay.mHeightScaleFactor
 
         /**
          * Adjusts the x coordinate from the preview's coordinate system to the view coordinate
          * system.
          */
         fun translateX(x: Float): Float {
-            if (mOverlay.mFacing == CameraSource.CAMERA_FACING_FRONT) {
-                return mOverlay.width - scaleX(x)
+            return if (mOverlay.mFacing == CAMERA_FACING_FRONT) {
+                mOverlay.width - scaleX(x)
             } else {
-                return scaleX(x)
+                scaleX(x)
             }
         }
 
@@ -106,9 +102,7 @@ class GraphicOverlay(context: Context, attrs: AttributeSet) : View(context, attr
          * Adjusts the y coordinate from the preview's coordinate system to the view coordinate
          * system.
          */
-        fun translateY(y: Float): Float {
-            return scaleY(y)
-        }
+        fun translateY(y: Float) = scaleY(y)
 
         fun postInvalidate() {
             mOverlay.postInvalidate()

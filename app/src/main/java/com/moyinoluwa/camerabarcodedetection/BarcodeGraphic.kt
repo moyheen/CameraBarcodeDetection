@@ -16,7 +16,8 @@
 package com.moyinoluwa.camerabarcodedetection
 
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Color.BLUE
+import android.graphics.Color.MAGENTA
 import android.graphics.Paint
 import com.google.android.gms.vision.barcode.Barcode
 import com.moyinoluwa.camerabarcodedetection.ui.camera.GraphicOverlay
@@ -31,27 +32,19 @@ private const val ID_TEXT_SIZE = 40.0f
 
 class BarcodeGraphic(overlay: GraphicOverlay) : GraphicOverlay.Graphic(overlay) {
 
-    private val idPaint: Paint
-    private val boxPaint: Paint
+    private val idPaint = Paint().apply {
+        color = BLUE
+        textSize = ID_TEXT_SIZE
+    }
+
+    private val boxPaint = Paint().apply {
+        color = MAGENTA
+        style = Paint.Style.STROKE
+        strokeWidth = BOX_STROKE_WIDTH
+    }
 
     @Volatile private var barcode: Barcode? = null
     private var barcodeId: Int = 0
-    private var currentColorIndex = 0
-    private val COLOR_CHOICES = intArrayOf(Color.BLUE, Color.CYAN, Color.GREEN, Color.MAGENTA, Color.RED, Color.WHITE, Color.YELLOW)
-
-    init {
-        currentColorIndex = (currentColorIndex + 1) % COLOR_CHOICES.size
-        val selectedColor = COLOR_CHOICES[currentColorIndex]
-
-        idPaint = Paint()
-        idPaint.color = selectedColor
-        idPaint.textSize = ID_TEXT_SIZE
-
-        boxPaint = Paint()
-        boxPaint.color = selectedColor
-        boxPaint.style = Paint.Style.STROKE
-        boxPaint.strokeWidth = BOX_STROKE_WIDTH
-    }
 
     fun setId(id: Int) {
         barcodeId = id

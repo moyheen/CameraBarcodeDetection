@@ -1,22 +1,26 @@
 package com.moyinoluwa.camerabarcodedetection
 
-import android.Manifest
+import android.Manifest.permission.CAMERA
 import android.content.DialogInterface
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.design.widget.Snackbar.LENGTH_INDEFINITE
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
-import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.ConnectionResult.SUCCESS
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.vision.CameraSource
+import com.google.android.gms.vision.CameraSource.CAMERA_FACING_BACK
 import com.google.android.gms.vision.Detector
 import com.google.android.gms.vision.MultiProcessor
 import com.google.android.gms.vision.Tracker
 import com.google.android.gms.vision.barcode.Barcode
+import com.google.android.gms.vision.barcode.Barcode.ALL_FORMATS
 import com.google.android.gms.vision.barcode.BarcodeDetector
 import com.moyinoluwa.camerabarcodedetection.ui.camera.CameraSourcePreview
 import com.moyinoluwa.camerabarcodedetection.ui.camera.GraphicOverlay
@@ -43,12 +47,8 @@ class MainActivity : AppCompatActivity() {
 
         //Check for the camera permission before accessing the camera.  If the
         //permission is not granted yet, request permission.
-        val rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-        if (rc == PackageManager.PERMISSION_GRANTED) {
-            createCameraSource()
-        } else {
-            requestCameraPermission()
-        }
+        val rc = ActivityCompat.checkSelfPermission(this, CAMERA)
+        if (rc == PERMISSION_GRANTED) createCameraSource() else requestCameraPermission()
     }
 
     /**
@@ -59,21 +59,18 @@ class MainActivity : AppCompatActivity() {
     private fun requestCameraPermission() {
         Log.w(TAG, "Camera permission is not granted. Requesting permission")
 
-        val permissions = arrayOf(Manifest.permission.CAMERA)
+        val permissions = arrayOf(CAMERA)
 
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.CAMERA)) {
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, CAMERA)) {
             ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM)
             return
         }
 
         val listener = View.OnClickListener {
-            ActivityCompat.requestPermissions(this, permissions,
-                    RC_HANDLE_CAMERA_PERM)
+            ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM)
         }
 
-        Snackbar.make(graphicOverlay, R.string.permission_camera_rationale,
-                Snackbar.LENGTH_INDEFINITE)
+        Snackbar.make(graphicOverlay, R.string.permission_camera_rationale, LENGTH_INDEFINITE)
                 .setAction(R.string.ok, listener)
                 .show()
     }
@@ -85,8 +82,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createCameraSource() {
         val detector = BarcodeDetector.Builder(this)
-                .setBarcodeFormats(Barcode.ALL_FORMATS)
-                .build()
+                                      .setBarcodeFormats(ALL_FORMATS)
+                                      .build()
 
         detector.setProcessor(MultiProcessor.Builder(GraphicBarcodeTrackerFactory()).build())
 
@@ -103,10 +100,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         cameraSource = CameraSource.Builder(this, detector)
-                .setRequestedPreviewSize(1024, 768)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
-                .setRequestedFps(15.0f)
-                .build()
+                                   .setFacing(CAMERA_FACING_BACK)
+                                   .setAutoFocusEnabled(true)
+                                   .setRequestedFps(15.0f)
+                                   .build()
     }
 
     /**
@@ -156,28 +153,28 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
-            Log.d(TAG, "Got unexpected permission result: " + requestCode)
+            Log.d(TAG, "Got unexpected permission result: $requestCode")
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
             return
         }
 
-        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.isNotEmpty() && grantResults[0] == PERMISSION_GRANTED) {
             Log.d(TAG, "Camera permission granted - initialize the camera source")
             // we have permission, so create the camerasource
             createCameraSource()
             return
         }
 
-        Log.e(TAG, "Permission not granted: results len = " + grantResults.size +
-                " Result code = " + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
+        Log.e(TAG, "Permission not granted: results len = ${grantResults.size} Result code = "
+                + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
 
         val listener = DialogInterface.OnClickListener { _, _ -> finish() }
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Barcode Tracker sample")
-                .setMessage(R.string.no_camera_permission)
-                .setPositiveButton(R.string.ok, listener)
-                .show()
+               .setMessage(R.string.no_camera_permission)
+               .setPositiveButton(R.string.ok, listener)
+               .show()
     }
 
     //==============================================================================================
@@ -193,20 +190,19 @@ class MainActivity : AppCompatActivity() {
 
         // check that the device has play services available.
         val code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)
-        if (code != ConnectionResult.SUCCESS) {
+        if (code != SUCCESS) {
             val dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS)
             dlg.show()
         }
 
-        if (cameraSource != null) {
+        cameraSource?.let {
             try {
-                cameraSourcePreview.start(cameraSource as CameraSource, graphicOverlay)
+                cameraSourcePreview.start(it, graphicOverlay)
             } catch (e: IOException) {
                 Log.e(TAG, "Unable to start camera source.", e)
                 cameraSourcePreview.release()
                 cameraSource = null
             }
-
         }
     }
 
@@ -228,8 +224,8 @@ class MainActivity : AppCompatActivity() {
      * associated barcode overlay.
      */
     private inner class GraphicBarcodeTracker internal constructor(
-            private val mOverlay: GraphicOverlay)
-        : Tracker<Barcode>() {
+            private val mOverlay: GraphicOverlay
+    ) : Tracker<Barcode>() {
 
         private val mBarcodeGraphic: BarcodeGraphic = BarcodeGraphic(mOverlay)
 
